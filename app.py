@@ -160,7 +160,6 @@ TOOL_FUNCTIONS = {
 
 
 @app.route("/api/chat", methods=["POST", "OPTIONS"])
-@app.route("/", methods=["POST", "OPTIONS"])
 def chat():
     if request.method == "OPTIONS":
         return "", 200
@@ -168,7 +167,7 @@ def chat():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return jsonify({
-            "error": "GEMINI_API_KEY is not set. Add it to your .env file or environment variables."
+            "error": "GEMINI_API_KEY is not set. Add it to your environment variables."
         }), 500
 
     genai.configure(api_key=api_key)
