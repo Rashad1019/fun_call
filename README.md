@@ -75,6 +75,46 @@ python app.py
 
 Open `index.html` directly in your browser. It auto-detects localhost and points requests to `http://localhost:5000`.
 
+## API
+
+### `POST /api/chat`
+
+**Request**
+
+```json
+{
+  "message": "What's the weather in Tokyo?"
+}
+```
+
+**Response**
+
+```json
+{
+  "response": "The weather in Tokyo, Japan is currently partly cloudy...",
+  "tool_calls": [
+    {
+      "name": "get_weather",
+      "arguments": { "city": "Tokyo" },
+      "result": "Weather in Tokyo, Japan: Partly cloudy. Temperature: 22°C, Wind: 15 km/h"
+    }
+  ],
+  "model": "gemini-3.1-flash-lite"
+}
+```
+
+`tool_calls` is an empty array `[]` when the model answers without using a tool.
+
+**Error response**
+
+```json
+{
+  "error": "GEMINI_API_KEY is not set."
+}
+```
+
+---
+
 ## Deploy to Vercel
 
 1. Push to GitHub
