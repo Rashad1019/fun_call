@@ -3,420 +3,723 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Function Calling in LLMs — Gemini Demo</title>
+  <title>Function Calling in LLMs — Gemini</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface-2: #1f2937;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --blue: #58a6ff;
-      --blue-dim: rgba(88,166,255,0.1);
-      --green: #3fb950;
-      --green-dim: rgba(63,185,80,0.08);
-      --green-border: rgba(63,185,80,0.25);
-      --purple: #8957e5;
-      --purple-dim: rgba(137,87,229,0.07);
-      --orange: #d29922;
-      --red: #f85149;
-      --red-dim: rgba(248,81,73,0.1);
-      --red-border: rgba(248,81,73,0.3);
-      --radius: 8px;
-      --radius-lg: 12px;
+      --bg:      #060c16;
+      --s1:      #0b1525;
+      --s2:      #101e34;
+      --s3:      #162642;
+
+      --b0: rgba(0,200,255,0.05);
+      --b1: rgba(0,200,255,0.10);
+      --b2: rgba(0,200,255,0.20);
+      --b3: rgba(0,200,255,0.38);
+
+      --t1: #ddeeff;
+      --t2: #6a99c4;
+      --t3: #2f5070;
+
+      --cyan:   #00ccff;
+      --cyan-g: rgba(0,204,255,0.10);
+      --lime:   #a3e635;
+      --lime-g: rgba(163,230,53,0.08);
+      --violet: #a78bfa;
+      --violet-g: rgba(167,139,250,0.10);
+      --amber:  #fbbf24;
+      --red:    #f87171;
+
+      --ff:      'Inter', system-ui, sans-serif;
+      --ff-head: 'Space Grotesk', system-ui, sans-serif;
+      --ff-mono: 'JetBrains Mono', monospace;
+      --r: 6px;
+    }
+
+    html, body {
+      height: 100%;
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100dvh;
+      font-family: var(--ff);
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 70% 50% at 0% 0%, rgba(0,204,255,0.05) 0%, transparent 55%),
+        radial-gradient(circle, rgba(0,204,255,0.045) 1px, transparent 1px);
+      background-size: 100% 100%, 26px 26px;
+      color: var(--t1);
       display: flex;
       flex-direction: column;
+      height: 100dvh;
       overflow: hidden;
     }
 
-    /* ── Header ── */
+    /* ── HEADER ─────────────────────────────────── */
     header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      gap: 14px;
+      padding: 13px 22px;
+      border-bottom: 1px solid var(--b1);
+      background: rgba(6,12,22,0.92);
+      backdrop-filter: blur(10px);
       flex-shrink: 0;
-    }
-    .header-icon { font-size: 18px; }
-    .header-title { font-size: 15px; font-weight: 600; }
-    .model-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
-      padding: 3px 8px;
-      background: var(--blue-dim);
-      color: var(--blue);
-      border: 1px solid rgba(88,166,255,0.28);
-      border-radius: 20px;
-    }
-    .header-sub {
-      margin-left: auto;
-      font-size: 11px;
-      color: var(--muted);
+      z-index: 10;
     }
 
-    /* ── Layout ── */
+    .hd-mark {
+      width: 30px;
+      height: 30px;
+      background: var(--cyan-g);
+      border: 1px solid var(--b3);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .hd-title {
+      font-family: var(--ff-head);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--t1);
+    }
+    .hd-title span { color: var(--cyan); }
+
+    .hd-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--b2);
+      flex-shrink: 0;
+    }
+
+    .hd-model {
+      font-family: var(--ff-mono);
+      font-size: 11px;
+      color: var(--t2);
+    }
+
+    .hd-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--s1);
+      border: 1px solid var(--b1);
+      border-radius: 20px;
+      font-size: 11px;
+      color: var(--t2);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--lime);
+      box-shadow: 0 0 6px var(--lime);
+      animation: breathe 2.4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .tools-badge {
+      padding: 4px 10px;
+      background: var(--lime-g);
+      border: 1px solid rgba(163,230,53,0.2);
+      border-radius: 20px;
+      font-family: var(--ff-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--lime);
+      letter-spacing: 0.3px;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────── */
     main {
       display: flex;
       flex: 1;
       overflow: hidden;
     }
 
-    /* ── Sidebar ── */
+    /* ── SIDEBAR ────────────────────────────────── */
     .sidebar {
-      width: 220px;
+      width: 210px;
       flex-shrink: 0;
-      border-right: 1px solid var(--border);
-      padding: 18px 14px;
+      border-right: 1px solid var(--b1);
+      padding: 20px 14px;
       overflow-y: auto;
-      background: var(--surface);
-    }
-    .sidebar-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-    .step {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 8px;
-      border-radius: var(--radius);
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.4;
-      transition: background 0.12s, color 0.12s;
+      flex-direction: column;
+      gap: 0;
     }
-    .step.active {
-      background: var(--surface-2);
-      color: var(--text);
+
+    .sb-label {
+      font-family: var(--ff-mono);
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--t3);
+      margin-bottom: 14px;
     }
-    .step-num {
+
+    /* pipeline flow */
+    .pipeline { display: flex; flex-direction: column; }
+
+    .pipe-item {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .pipe-track {
+      width: 22px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .pipe-node {
       width: 20px;
       height: 20px;
-      min-width: 20px;
+      min-height: 20px;
       border-radius: 50%;
-      background: var(--border);
+      border: 1.5px solid var(--b2);
+      background: var(--bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--muted);
-      transition: background 0.12s, color 0.12s;
-    }
-    .step.active .step-num {
-      background: var(--blue);
-      color: #fff;
-    }
-    .sidebar-divider {
-      margin: 14px 0;
-      border: none;
-      border-top: 1px solid var(--border);
-    }
-    .sidebar-tools-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    .tool-pill {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      display: block;
-      padding: 5px 8px;
-      margin-bottom: 5px;
-      background: var(--green-dim);
-      color: var(--green);
-      border: 1px solid var(--green-border);
-      border-radius: 6px;
+      font-family: var(--ff-mono);
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--t3);
+      transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+      z-index: 1;
+      flex-shrink: 0;
     }
 
-    /* ── Chat area ── */
+    .pipe-item.active .pipe-node {
+      border-color: var(--cyan);
+      background: rgba(0,204,255,0.12);
+      color: var(--cyan);
+      box-shadow: 0 0 10px rgba(0,204,255,0.35);
+    }
+
+    .pipe-line {
+      width: 1.5px;
+      flex: 1;
+      min-height: 10px;
+      background: var(--b1);
+      margin: 0 auto;
+      transition: background 0.2s;
+    }
+
+    .pipe-item:last-child .pipe-line { display: none; }
+
+    .pipe-item.active .pipe-line {
+      background: rgba(0,204,255,0.25);
+    }
+
+    .pipe-content {
+      padding: 1px 0 12px 10px;
+      font-size: 11.5px;
+      color: var(--t3);
+      line-height: 1.35;
+      transition: color 0.2s;
+    }
+
+    .pipe-item.active .pipe-content { color: var(--t1); }
+
+    .sb-divider {
+      margin: 16px 0;
+      border: none;
+      border-top: 1px solid var(--b1);
+    }
+
+    .tool-tag {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 8px;
+      border-radius: var(--r);
+      margin-bottom: 4px;
+      font-family: var(--ff-mono);
+      font-size: 11px;
+      color: var(--t2);
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .tool-tag:hover {
+      background: var(--lime-g);
+      border-color: rgba(163,230,53,0.15);
+      color: var(--lime);
+    }
+
+    .tool-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--lime);
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+
+    /* ── CHAT ───────────────────────────────────── */
     .chat-wrapper {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
+
     .chat-inner {
       flex: 1;
       display: flex;
       flex-direction: column;
-      max-width: 780px;
+      max-width: 760px;
       width: 100%;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 22px;
       overflow: hidden;
     }
 
-    /* ── Messages ── */
     .messages {
       flex: 1;
       overflow-y: auto;
-      padding: 24px 0 8px;
+      padding: 28px 0 10px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 22px;
       scroll-behavior: smooth;
     }
-    .messages::-webkit-scrollbar { width: 5px; }
-    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-thumb {
+      background: var(--b2);
+      border-radius: 2px;
+    }
     .messages::-webkit-scrollbar-track { background: transparent; }
 
+    /* ── WELCOME ────────────────────────────────── */
     .welcome {
+      padding: 52px 0 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
       text-align: center;
-      padding: 48px 16px;
-      color: var(--muted);
     }
-    .welcome-icon { font-size: 36px; margin-bottom: 12px; }
-    .welcome h2 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-    .welcome p { font-size: 13px; line-height: 1.65; max-width: 440px; margin: 0 auto; }
 
-    .message { display: flex; flex-direction: column; gap: 6px; }
-    .msg-role {
+    .welcome-flow {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .flow-chip {
+      padding: 5px 11px;
+      border-radius: 4px;
+      font-family: var(--ff-mono);
       font-size: 11px;
+      font-weight: 500;
+      border: 1px solid;
+    }
+
+    .flow-chip.fc-user   { background: var(--violet-g); border-color: rgba(167,139,250,0.25); color: var(--violet); }
+    .flow-chip.fc-llm    { background: var(--cyan-g);   border-color: var(--b2);              color: var(--cyan); }
+    .flow-chip.fc-tool   { background: var(--lime-g);   border-color: rgba(163,230,53,0.25); color: var(--lime); }
+    .flow-chip.fc-result { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.2); color: var(--amber); }
+    .flow-chip.fc-resp   { background: var(--cyan-g);   border-color: var(--b2); color: var(--cyan); }
+
+    .flow-arrow {
+      font-size: 12px;
+      color: var(--t3);
+    }
+
+    .welcome h2 {
+      font-family: var(--ff-head);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--t1);
+      letter-spacing: -0.3px;
+    }
+
+    .welcome p {
+      font-size: 13.5px;
+      color: var(--t2);
+      line-height: 1.65;
+      max-width: 440px;
+    }
+
+    /* ── MESSAGES ───────────────────────────────── */
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      animation: rise 0.22s ease-out both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    .msg-role {
+      font-family: var(--ff-mono);
+      font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--t3);
     }
-    .role-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .message.user .role-dot { background: var(--blue); }
-    .message.assistant .role-dot { background: var(--green); }
+
+    .role-bar {
+      width: 14px;
+      height: 2px;
+      border-radius: 1px;
+    }
+
+    .message.user   .role-bar { background: var(--violet); }
+    .message.assistant .role-bar { background: var(--cyan); }
+
+    .message.user .msg-role { color: rgba(167,139,250,0.7); }
+    .message.assistant .msg-role { color: rgba(0,204,255,0.6); }
+
+    .msg-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message.user .msg-body { align-items: flex-end; }
 
     .msg-content {
-      padding: 12px 16px;
-      border-radius: var(--radius-lg);
       font-size: 14px;
-      line-height: 1.65;
-      border: 1px solid var(--border);
+      line-height: 1.7;
+      padding: 12px 16px;
+      border-radius: var(--r);
       white-space: pre-wrap;
       word-break: break-word;
     }
+
     .message.user .msg-content {
-      background: var(--blue-dim);
-      border-color: rgba(88,166,255,0.2);
+      max-width: 82%;
+      background: var(--violet-g);
+      border: 1px solid rgba(167,139,250,0.18);
+      border-radius: 10px 10px 2px 10px;
+      color: var(--t1);
     }
-    .message.assistant .msg-content { background: var(--surface); }
 
-    /* ── Tool call blocks ── */
-    .tool-blocks { display: flex; flex-direction: column; gap: 8px; }
+    .message.assistant .msg-content {
+      background: var(--s1);
+      border: 1px solid var(--b1);
+      border-radius: 2px 10px 10px 10px;
+      color: var(--t1);
+    }
+
+    /* ── TOOL BLOCKS ────────────────────────────── */
     .tool-block {
-      border: 1px solid var(--green-border);
-      border-radius: var(--radius);
+      border: 1px solid rgba(163,230,53,0.18);
+      border-left: 2px solid var(--lime);
+      border-radius: var(--r);
+      background: var(--lime-g);
       overflow: hidden;
+      font-family: var(--ff-mono);
       font-size: 12px;
+      animation: rise 0.22s ease-out both;
     }
-    .tool-block-header {
+
+    .tb-header {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
-      background: var(--green-dim);
-      border-bottom: 1px solid var(--green-border);
+      padding: 8px 14px;
+      background: rgba(163,230,53,0.06);
+      border-bottom: 1px solid rgba(163,230,53,0.10);
     }
-    .tool-block-name {
-      font-family: 'JetBrains Mono', monospace;
+
+    .tb-icon {
       font-size: 12px;
+    }
+
+    .tb-name {
       font-weight: 600;
-      color: var(--green);
-    }
-    .tool-block-badge {
-      margin-left: auto;
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 2px 6px;
-      background: rgba(63,185,80,0.15);
-      color: var(--green);
-      border-radius: 4px;
-    }
-    .tool-block-args {
-      padding: 8px 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
-      border-bottom: 1px solid rgba(63,185,80,0.12);
-      line-height: 1.6;
-    }
-    .tool-block-result {
-      padding: 8px 12px;
-      background: var(--purple-dim);
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    .tool-result-label {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--purple);
-      margin-bottom: 3px;
+      font-size: 11.5px;
+      color: var(--lime);
     }
 
-    /* ── Loading ── */
-    .loading-row {
+    .tb-badge {
+      margin-left: auto;
+      padding: 2px 7px;
+      background: rgba(163,230,53,0.14);
+      border: 1px solid rgba(163,230,53,0.28);
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--lime);
+    }
+
+    .tb-row {
+      display: flex;
+      border-bottom: 1px solid rgba(163,230,53,0.06);
+    }
+
+    .tb-row:last-child { border-bottom: none; }
+
+    .tb-key {
+      width: 42px;
+      padding: 8px 0 8px 14px;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--t3);
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      padding-top: 9px;
+    }
+
+    .tb-val {
+      flex: 1;
+      padding: 8px 14px;
+      color: var(--t2);
+      line-height: 1.55;
+      border-left: 1px solid rgba(163,230,53,0.06);
+    }
+
+    .tb-result-row .tb-key { color: rgba(251,191,36,0.5); }
+    .tb-result-row .tb-val { color: var(--t2); }
+    .tb-result-row { background: rgba(251,191,36,0.04); }
+
+    .arg-k { color: var(--cyan); }
+    .arg-v { color: var(--amber); }
+
+    /* ── LOADING ────────────────────────────────── */
+    .loading-block {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--muted);
-      padding: 10px 0;
-    }
-    .dots { display: flex; gap: 4px; }
-    .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--blue);
-      animation: blink 1.3s ease-in-out infinite;
-    }
-    .dot:nth-child(2) { animation-delay: 0.18s; }
-    .dot:nth-child(3) { animation-delay: 0.36s; }
-    @keyframes blink {
-      0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
-      40% { opacity: 1; transform: scale(1); }
+      gap: 10px;
+      padding: 10px 2px;
+      color: var(--t3);
+      font-size: 12px;
+      font-family: var(--ff-mono);
     }
 
-    /* ── Error ── */
+    .ld-dots { display: flex; gap: 5px; }
+
+    .ld-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      animation: ld 1.2s ease-in-out infinite;
+    }
+
+    .ld-dot:nth-child(2) { animation-delay: 0.16s; }
+    .ld-dot:nth-child(3) { animation-delay: 0.32s; }
+
+    @keyframes ld {
+      0%, 80%, 100% { opacity: 0.2; transform: scale(0.7); }
+      40%           { opacity: 1;   transform: scale(1);   }
+    }
+
+    /* ── ERROR ──────────────────────────────────── */
     .err-block {
-      padding: 10px 14px;
-      background: var(--red-dim);
-      border: 1px solid var(--red-border);
-      border-radius: var(--radius);
+      padding: 11px 15px;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.22);
+      border-radius: var(--r);
       color: var(--red);
       font-size: 13px;
       line-height: 1.5;
+      animation: rise 0.22s ease-out both;
     }
 
-    /* ── Example chips ── */
+    /* ── EXAMPLE CHIPS ──────────────────────────── */
     .examples {
-      padding: 10px 0 6px;
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      border-top: 1px solid var(--border);
+      padding: 12px 0 6px;
+      border-top: 1px solid var(--b0);
     }
+
     .chip {
       padding: 5px 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--s1);
+      border: 1px solid var(--b1);
       border-radius: 20px;
-      color: var(--muted);
+      color: var(--t2);
       font-size: 12px;
       cursor: pointer;
-      transition: all 0.13s;
-      font-family: inherit;
+      transition: all 0.15s;
+      font-family: var(--ff);
     }
-    .chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
 
-    /* ── Input ── */
+    .chip:hover {
+      background: var(--cyan-g);
+      border-color: var(--b3);
+      color: var(--cyan);
+    }
+
+    /* ── INPUT ──────────────────────────────────── */
     .input-row {
       display: flex;
       gap: 8px;
-      padding: 10px 0 18px;
+      padding: 10px 0 20px;
     }
+
     .msg-input {
       flex: 1;
-      padding: 10px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
+      padding: 11px 16px;
+      background: var(--s1);
+      border: 1px solid var(--b2);
+      border-radius: var(--r);
+      color: var(--t1);
       font-size: 14px;
-      font-family: inherit;
+      font-family: var(--ff);
       outline: none;
-      transition: border-color 0.13s, box-shadow 0.13s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
+
     .msg-input:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(88,166,255,0.12);
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0,204,255,0.08);
     }
-    .msg-input::placeholder { color: var(--muted); }
+
+    .msg-input::placeholder { color: var(--t3); }
+
     .send-btn {
-      padding: 10px 20px;
-      background: var(--blue);
-      color: #fff;
+      padding: 11px 22px;
+      background: var(--cyan);
+      color: #060c16;
       border: none;
-      border-radius: var(--radius);
-      font-size: 14px;
-      font-weight: 600;
+      border-radius: var(--r);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--ff-head);
       cursor: pointer;
-      transition: background 0.13s, opacity 0.13s;
-      font-family: inherit;
+      letter-spacing: 0.3px;
+      transition: opacity 0.15s, background 0.15s;
       white-space: nowrap;
     }
-    .send-btn:hover:not(:disabled) { background: #79c0ff; }
-    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    /* ── Responsive ── */
+    .send-btn:hover:not(:disabled) { background: #33d6ff; }
+    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── RESPONSIVE ─────────────────────────────── */
     @media (max-width: 640px) {
       .sidebar { display: none; }
-      .chat-inner { padding: 0 12px; }
-      .header-sub { display: none; }
+      .chat-inner { padding: 0 14px; }
+      .hd-right .tools-badge { display: none; }
     }
   </style>
 </head>
 <body>
 
 <header>
-  <span class="header-icon">⚡</span>
-  <h1 class="header-title">Function Calling in LLMs</h1>
-  <span class="model-badge">gemini-3.1-flash-lite</span>
-  <span class="header-sub">Powered by Google Gemini · Open-Meteo API</span>
+  <div class="hd-mark">⚡</div>
+  <h1 class="hd-title">Function Calling <span>in LLMs</span></h1>
+  <div class="hd-sep"></div>
+  <span class="hd-model">gemini-3.1-flash-lite</span>
+  <div class="hd-right">
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      live
+    </div>
+    <span class="tools-badge">3 TOOLS</span>
+  </div>
 </header>
 
 <main>
   <aside class="sidebar">
-    <p class="sidebar-label">How It Works</p>
-    <div class="step" id="step-1"><div class="step-num">1</div><div>Define available tools</div></div>
-    <div class="step" id="step-2"><div class="step-num">2</div><div>LLM reads user query</div></div>
-    <div class="step" id="step-3"><div class="step-num">3</div><div>LLM decides if tool needed</div></div>
-    <div class="step" id="step-4"><div class="step-num">4</div><div>Model generates structured params</div></div>
-    <div class="step" id="step-5"><div class="step-num">5</div><div>Code executes the function</div></div>
-    <div class="step" id="step-6"><div class="step-num">6</div><div>Result returned to model</div></div>
-    <div class="step" id="step-7"><div class="step-num">7</div><div>Model generates final answer</div></div>
+    <p class="sb-label">Pipeline</p>
 
-    <hr class="sidebar-divider">
+    <div class="pipeline">
+      <div class="pipe-item" id="step-1">
+        <div class="pipe-track"><div class="pipe-node">1</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Define tools</div>
+      </div>
+      <div class="pipe-item" id="step-2">
+        <div class="pipe-track"><div class="pipe-node">2</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Read user query</div>
+      </div>
+      <div class="pipe-item" id="step-3">
+        <div class="pipe-track"><div class="pipe-node">3</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Decide if tool needed</div>
+      </div>
+      <div class="pipe-item" id="step-4">
+        <div class="pipe-track"><div class="pipe-node">4</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Generate structured params</div>
+      </div>
+      <div class="pipe-item" id="step-5">
+        <div class="pipe-track"><div class="pipe-node">5</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Execute function</div>
+      </div>
+      <div class="pipe-item" id="step-6">
+        <div class="pipe-track"><div class="pipe-node">6</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Return result to model</div>
+      </div>
+      <div class="pipe-item" id="step-7">
+        <div class="pipe-track"><div class="pipe-node">7</div><div class="pipe-line"></div></div>
+        <div class="pipe-content">Generate final response</div>
+      </div>
+    </div>
 
-    <p class="sidebar-tools-label">Available Tools</p>
-    <span class="tool-pill">get_weather(city)</span>
-    <span class="tool-pill">calculate(expression)</span>
-    <span class="tool-pill">get_current_time()</span>
+    <hr class="sb-divider">
+
+    <p class="sb-label">Tools</p>
+    <div class="tool-tag"><span class="tool-dot"></span>get_weather(city)</div>
+    <div class="tool-tag"><span class="tool-dot"></span>calculate(expr)</div>
+    <div class="tool-tag"><span class="tool-dot"></span>get_current_time()</div>
   </aside>
 
   <div class="chat-wrapper">
     <div class="chat-inner">
+
       <div class="messages" id="messages">
         <div class="welcome" id="welcome">
-          <div class="welcome-icon">🤖</div>
+          <div class="welcome-flow">
+            <span class="flow-chip fc-user">user query</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-chip fc-llm">LLM</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-chip fc-tool">tool call</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-chip fc-result">result</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-chip fc-resp">response</span>
+          </div>
           <h2>Function Calling Demo</h2>
-          <p>Watch the AI decide when to use tools in real time. Try asking about weather, math, or the current date.</p>
+          <p>Watch Gemini decide when to use tools in real time. Every tool call is visualized as it executes.</p>
         </div>
       </div>
 
@@ -424,7 +727,7 @@
         <button class="chip" onclick="useExample(this)">What's the weather in Tokyo?</button>
         <button class="chip" onclick="useExample(this)">Calculate 2**10 + 15*4</button>
         <button class="chip" onclick="useExample(this)">What's today's date and time?</button>
-        <button class="chip" onclick="useExample(this)">Weather in Paris, and what is 500 / 4?</button>
+        <button class="chip" onclick="useExample(this)">Weather in Paris and what is 500 / 4?</button>
       </div>
 
       <div class="input-row">
@@ -432,11 +735,12 @@
           class="msg-input"
           id="msgInput"
           type="text"
-          placeholder="Ask about weather, math, time…"
+          placeholder="Ask about weather, math, or time…"
           onkeydown="if(event.key==='Enter')send()"
         >
         <button class="send-btn" id="sendBtn" onclick="send()">Send</button>
       </div>
+
     </div>
   </div>
 </main>
@@ -451,7 +755,7 @@
   let busy = false;
 
   function activateStep(n) {
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.pipe-item').forEach(el => el.classList.remove('active'));
     if (n) document.getElementById(`step-${n}`)?.classList.add('active');
   }
 
@@ -462,71 +766,76 @@
 
   function esc(str) {
     const d = document.createElement('div');
-    d.textContent = str;
+    d.textContent = String(str);
     return d.innerHTML;
   }
 
   function fmtArgs(args) {
     return Object.entries(args)
-      .map(([k, v]) => `<span style="color:var(--blue)">${esc(k)}</span>: <span style="color:var(--orange)">"${esc(String(v))}"</span>`)
-      .join(', ');
+      .map(([k, v]) => `<span class="arg-k">${esc(k)}</span>: <span class="arg-v">"${esc(v)}"</span>`)
+      .join('  ');
   }
 
-  function addUserMessage(text) {
+  function addUserMsg(text) {
     document.getElementById('welcome')?.remove();
     const el = document.createElement('div');
     el.className = 'message user';
     el.innerHTML = `
-      <div class="msg-role"><span class="role-dot"></span>You</div>
-      <div class="msg-content">${esc(text)}</div>`;
+      <div class="msg-role"><span class="role-bar"></span>You</div>
+      <div class="msg-body">
+        <div class="msg-content">${esc(text)}</div>
+      </div>`;
     document.getElementById('messages').appendChild(el);
-    scrollBottom();
+    scrollEnd();
   }
 
   function addLoading() {
     const el = document.createElement('div');
-    el.id = 'loading';
-    el.className = 'loading-row';
+    el.id = 'ld';
+    el.className = 'loading-block';
     el.innerHTML = `
-      <div class="dots">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <div class="ld-dots">
+        <div class="ld-dot"></div>
+        <div class="ld-dot"></div>
+        <div class="ld-dot"></div>
       </div>
-      <span>Thinking…</span>`;
+      processing…`;
     document.getElementById('messages').appendChild(el);
-    scrollBottom();
+    scrollEnd();
   }
 
-  function removeLoading() {
-    document.getElementById('loading')?.remove();
-  }
+  function removeLoading() { document.getElementById('ld')?.remove(); }
 
-  function addAssistantMessage(text, toolCalls) {
+  function addAssistantMsg(text, toolCalls) {
     const el = document.createElement('div');
     el.className = 'message assistant';
 
-    let toolHtml = '';
-    if (toolCalls && toolCalls.length > 0) {
-      toolHtml = '<div class="tool-blocks">' + toolCalls.map(tc => `
-        <div class="tool-block">
-          <div class="tool-block-header">
-            <span>⚡</span>
-            <span class="tool-block-name">${esc(tc.name)}()</span>
-            <span class="tool-block-badge">Tool Call</span>
-          </div>
-          <div class="tool-block-args">${fmtArgs(tc.arguments)}</div>
-          <div class="tool-block-result">
-            <div class="tool-result-label">Result</div>
-            ${esc(tc.result)}
-          </div>
-        </div>`).join('') + '</div>';
-    }
+    const toolsHtml = (toolCalls || []).map(tc => `
+      <div class="tool-block">
+        <div class="tb-header">
+          <span class="tb-icon">▶</span>
+          <span class="tb-name">${esc(tc.name)}()</span>
+          <span class="tb-badge">Executed</span>
+        </div>
+        <div class="tb-row">
+          <div class="tb-key">IN</div>
+          <div class="tb-val">${fmtArgs(tc.arguments)}</div>
+        </div>
+        <div class="tb-row tb-result-row">
+          <div class="tb-key">OUT</div>
+          <div class="tb-val">${esc(tc.result)}</div>
+        </div>
+      </div>`).join('');
 
     el.innerHTML = `
-      <div class="msg-role"><span class="role-dot"></span>Gemini</div>
-      ${toolHtml}
-      <div class="msg-content">${esc(text)}</div>`;
+      <div class="msg-role"><span class="role-bar"></span>Gemini</div>
+      <div class="msg-body">
+        ${toolsHtml}
+        <div class="msg-content">${esc(text)}</div>
+      </div>`;
+
     document.getElementById('messages').appendChild(el);
-    scrollBottom();
+    scrollEnd();
   }
 
   function addError(msg) {
@@ -534,10 +843,10 @@
     el.className = 'err-block';
     el.textContent = msg;
     document.getElementById('messages').appendChild(el);
-    scrollBottom();
+    scrollEnd();
   }
 
-  function scrollBottom() {
+  function scrollEnd() {
     const m = document.getElementById('messages');
     m.scrollTop = m.scrollHeight;
   }
@@ -552,17 +861,19 @@
     busy = true;
     document.getElementById('sendBtn').disabled = true;
 
-    addUserMessage(text);
+    addUserMsg(text);
     addLoading();
     activateStep(2);
 
     try {
       activateStep(3);
+
       const res = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
       });
+
       const data = await res.json();
       removeLoading();
 
@@ -570,13 +881,9 @@
         addError('Error: ' + data.error);
         activateStep(null);
       } else {
-        if (data.tool_calls?.length) {
-          activateStep(5);
-          setTimeout(() => activateStep(7), 900);
-        } else {
-          activateStep(7);
-        }
-        addAssistantMessage(data.response, data.tool_calls);
+        activateStep(data.tool_calls?.length ? 5 : 7);
+        addAssistantMsg(data.response, data.tool_calls);
+        if (data.tool_calls?.length) setTimeout(() => activateStep(7), 900);
         setTimeout(() => activateStep(null), 3500);
       }
     } catch (err) {
