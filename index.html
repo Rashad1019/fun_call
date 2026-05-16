@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Function Calling in LLMs — Gemini Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --blue: #58a6ff;
+      --blue-dim: rgba(88,166,255,0.1);
+      --green: #3fb950;
+      --green-dim: rgba(63,185,80,0.08);
+      --green-border: rgba(63,185,80,0.25);
+      --purple: #8957e5;
+      --purple-dim: rgba(137,87,229,0.07);
+      --orange: #d29922;
+      --red: #f85149;
+      --red-dim: rgba(248,81,73,0.1);
+      --red-border: rgba(248,81,73,0.3);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .header-icon { font-size: 18px; }
+    .header-title { font-size: 15px; font-weight: 600; }
+    .model-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      background: var(--blue-dim);
+      color: var(--blue);
+      border: 1px solid rgba(88,166,255,0.28);
+      border-radius: 20px;
+    }
+    .header-sub {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Layout ── */
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      padding: 18px 14px;
+      overflow-y: auto;
+      background: var(--surface);
+    }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      transition: background 0.12s, color 0.12s;
+    }
+    .step.active {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .step-num {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      transition: background 0.12s, color 0.12s;
+    }
+    .step.active .step-num {
+      background: var(--blue);
+      color: #fff;
+    }
+    .sidebar-divider {
+      margin: 14px 0;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-tools-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .tool-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      display: block;
+      padding: 5px 8px;
+      margin-bottom: 5px;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid var(--green-border);
+      border-radius: 6px;
+    }
+
+    /* ── Chat area ── */
+    .chat-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 780px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      overflow: hidden;
+    }
+
+    /* ── Messages ── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 5px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+
+    .welcome {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--muted);
+    }
+    .welcome-icon { font-size: 36px; margin-bottom: 12px; }
+    .welcome h2 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .welcome p { font-size: 13px; line-height: 1.65; max-width: 440px; margin: 0 auto; }
+
+    .message { display: flex; flex-direction: column; gap: 6px; }
+    .msg-role {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+    .role-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .message.user .role-dot { background: var(--blue); }
+    .message.assistant .role-dot { background: var(--green); }
+
+    .msg-content {
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      line-height: 1.65;
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .message.user .msg-content {
+      background: var(--blue-dim);
+      border-color: rgba(88,166,255,0.2);
+    }
+    .message.assistant .msg-content { background: var(--surface); }
+
+    /* ── Tool call blocks ── */
+    .tool-blocks { display: flex; flex-direction: column; gap: 8px; }
+    .tool-block {
+      border: 1px solid var(--green-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      font-size: 12px;
+    }
+    .tool-block-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--green-dim);
+      border-bottom: 1px solid var(--green-border);
+    }
+    .tool-block-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green);
+    }
+    .tool-block-badge {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      background: rgba(63,185,80,0.15);
+      color: var(--green);
+      border-radius: 4px;
+    }
+    .tool-block-args {
+      padding: 8px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(63,185,80,0.12);
+      line-height: 1.6;
+    }
+    .tool-block-result {
+      padding: 8px 12px;
+      background: var(--purple-dim);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .tool-result-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--purple);
+      margin-bottom: 3px;
+    }
+
+    /* ── Loading ── */
+    .loading-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 10px 0;
+    }
+    .dots { display: flex; gap: 4px; }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: blink 1.3s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.18s; }
+    .dot:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ── Error ── */
+    .err-block {
+      padding: 10px 14px;
+      background: var(--red-dim);
+      border: 1px solid var(--red-border);
+      border-radius: var(--radius);
+      color: var(--red);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* ── Example chips ── */
+    .examples {
+      padding: 10px 0 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-top: 1px solid var(--border);
+    }
+    .chip {
+      padding: 5px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.13s;
+      font-family: inherit;
+    }
+    .chip:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+
+    /* ── Input ── */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 0 18px;
+    }
+    .msg-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.13s, box-shadow 0.13s;
+    }
+    .msg-input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(88,166,255,0.12);
+    }
+    .msg-input::placeholder { color: var(--muted); }
+    .send-btn {
+      padding: 10px 20px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.13s, opacity 0.13s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .send-btn:hover:not(:disabled) { background: #79c0ff; }
+    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .sidebar { display: none; }
+      .chat-inner { padding: 0 12px; }
+      .header-sub { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="header-icon">⚡</span>
+  <h1 class="header-title">Function Calling in LLMs</h1>
+  <span class="model-badge">gemini-3.1-flash-lite</span>
+  <span class="header-sub">Powered by Google Gemini · Open-Meteo API</span>
+</header>
+
+<main>
+  <aside class="sidebar">
+    <p class="sidebar-label">How It Works</p>
+    <div class="step" id="step-1"><div class="step-num">1</div><div>Define available tools</div></div>
+    <div class="step" id="step-2"><div class="step-num">2</div><div>LLM reads user query</div></div>
+    <div class="step" id="step-3"><div class="step-num">3</div><div>LLM decides if tool needed</div></div>
+    <div class="step" id="step-4"><div class="step-num">4</div><div>Model generates structured params</div></div>
+    <div class="step" id="step-5"><div class="step-num">5</div><div>Code executes the function</div></div>
+    <div class="step" id="step-6"><div class="step-num">6</div><div>Result returned to model</div></div>
+    <div class="step" id="step-7"><div class="step-num">7</div><div>Model generates final answer</div></div>
+
+    <hr class="sidebar-divider">
+
+    <p class="sidebar-tools-label">Available Tools</p>
+    <span class="tool-pill">get_weather(city)</span>
+    <span class="tool-pill">calculate(expression)</span>
+    <span class="tool-pill">get_current_time()</span>
+  </aside>
+
+  <div class="chat-wrapper">
+    <div class="chat-inner">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">🤖</div>
+          <h2>Function Calling Demo</h2>
+          <p>Watch the AI decide when to use tools in real time. Try asking about weather, math, or the current date.</p>
+        </div>
+      </div>
+
+      <div class="examples" id="examples">
+        <button class="chip" onclick="useExample(this)">What's the weather in Tokyo?</button>
+        <button class="chip" onclick="useExample(this)">Calculate 2**10 + 15*4</button>
+        <button class="chip" onclick="useExample(this)">What's today's date and time?</button>
+        <button class="chip" onclick="useExample(this)">Weather in Paris, and what is 500 / 4?</button>
+      </div>
+
+      <div class="input-row">
+        <input
+          class="msg-input"
+          id="msgInput"
+          type="text"
+          placeholder="Ask about weather, math, time…"
+          onkeydown="if(event.key==='Enter')send()"
+        >
+        <button class="send-btn" id="sendBtn" onclick="send()">Send</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = (
+    location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+      ? 'http://localhost:5000/api/chat'
+      : '/api/chat'
+  );
+
+  let busy = false;
+
+  function activateStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    if (n) document.getElementById(`step-${n}`)?.classList.add('active');
+  }
+
+  function useExample(btn) {
+    document.getElementById('msgInput').value = btn.textContent;
+    send();
+  }
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function fmtArgs(args) {
+    return Object.entries(args)
+      .map(([k, v]) => `<span style="color:var(--blue)">${esc(k)}</span>: <span style="color:var(--orange)">"${esc(String(v))}"</span>`)
+      .join(', ');
+  }
+
+  function addUserMessage(text) {
+    document.getElementById('welcome')?.remove();
+    const el = document.createElement('div');
+    el.className = 'message user';
+    el.innerHTML = `
+      <div class="msg-role"><span class="role-dot"></span>You</div>
+      <div class="msg-content">${esc(text)}</div>`;
+    document.getElementById('messages').appendChild(el);
+    scrollBottom();
+  }
+
+  function addLoading() {
+    const el = document.createElement('div');
+    el.id = 'loading';
+    el.className = 'loading-row';
+    el.innerHTML = `
+      <div class="dots">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+      <span>Thinking…</span>`;
+    document.getElementById('messages').appendChild(el);
+    scrollBottom();
+  }
+
+  function removeLoading() {
+    document.getElementById('loading')?.remove();
+  }
+
+  function addAssistantMessage(text, toolCalls) {
+    const el = document.createElement('div');
+    el.className = 'message assistant';
+
+    let toolHtml = '';
+    if (toolCalls && toolCalls.length > 0) {
+      toolHtml = '<div class="tool-blocks">' + toolCalls.map(tc => `
+        <div class="tool-block">
+          <div class="tool-block-header">
+            <span>⚡</span>
+            <span class="tool-block-name">${esc(tc.name)}()</span>
+            <span class="tool-block-badge">Tool Call</span>
+          </div>
+          <div class="tool-block-args">${fmtArgs(tc.arguments)}</div>
+          <div class="tool-block-result">
+            <div class="tool-result-label">Result</div>
+            ${esc(tc.result)}
+          </div>
+        </div>`).join('') + '</div>';
+    }
+
+    el.innerHTML = `
+      <div class="msg-role"><span class="role-dot"></span>Gemini</div>
+      ${toolHtml}
+      <div class="msg-content">${esc(text)}</div>`;
+    document.getElementById('messages').appendChild(el);
+    scrollBottom();
+  }
+
+  function addError(msg) {
+    const el = document.createElement('div');
+    el.className = 'err-block';
+    el.textContent = msg;
+    document.getElementById('messages').appendChild(el);
+    scrollBottom();
+  }
+
+  function scrollBottom() {
+    const m = document.getElementById('messages');
+    m.scrollTop = m.scrollHeight;
+  }
+
+  async function send() {
+    if (busy) return;
+    const input = document.getElementById('msgInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    busy = true;
+    document.getElementById('sendBtn').disabled = true;
+
+    addUserMessage(text);
+    addLoading();
+    activateStep(2);
+
+    try {
+      activateStep(3);
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      removeLoading();
+
+      if (data.error) {
+        addError('Error: ' + data.error);
+        activateStep(null);
+      } else {
+        if (data.tool_calls?.length) {
+          activateStep(5);
+          setTimeout(() => activateStep(7), 900);
+        } else {
+          activateStep(7);
+        }
+        addAssistantMessage(data.response, data.tool_calls);
+        setTimeout(() => activateStep(null), 3500);
+      }
+    } catch (err) {
+      removeLoading();
+      addError(`Network error: ${err.message}. Is the API server running?`);
+      activateStep(null);
+    } finally {
+      busy = false;
+      document.getElementById('sendBtn').disabled = false;
+      document.getElementById('msgInput').focus();
+    }
+  }
+
+  document.getElementById('msgInput').focus();
+</script>
+</body>
+</html>
